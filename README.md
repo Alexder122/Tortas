@@ -1,10 +1,10 @@
 # Nuxt Minimal Starter
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Consulta la [documentación de Nuxt](https://nuxt.com/docs/getting-started/introduction) para aprender más.
 
-## Setup
+## Configuración
 
-Make sure to install dependencies:
+Asegúrate de instalar las dependencias:
 
 ```bash
 # npm
@@ -20,9 +20,9 @@ yarn install
 bun install
 ```
 
-## Development Server
+## Servidor de Desarrollo
 
-Start the development server on `http://localhost:3000`:
+Inicia el servidor de desarrollo en `http://localhost:3000`:
 
 ```bash
 # npm
@@ -38,9 +38,31 @@ yarn dev
 bun run dev
 ```
 
-## Production
+## Formato y Lint
 
-Build the application for production:
+```bash
+# Formatear todos los archivos
+bunx biome format --write
+
+# Formatear archivos específicos
+bunx biome format --write <archivos>
+
+# Lint y aplicar correcciones seguras a todos los archivos
+bunx biome lint --write
+
+# Lint y aplicar correcciones seguras a archivos específicos
+bunx biome lint --write <archivos>
+
+# Formatear, hacer lint y organizar imports en todos los archivos
+bunx biome check --write
+
+# Formatear, hacer lint y organizar imports en archivos específicos
+bunx biome check --write <archivos>
+```
+
+## Producción
+
+Compila la aplicación para producción:
 
 ```bash
 # npm
@@ -56,7 +78,7 @@ yarn build
 bun run build
 ```
 
-Locally preview production build:
+Previsualiza la compilación de producción localmente:
 
 ```bash
 # npm
@@ -72,4 +94,4 @@ yarn preview
 bun run preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Consulta la [documentación de despliegue](https://nuxt.com/docs/getting-started/deployment) para más información.

@@ -1,0 +1,22 @@
+{
+	"cSpell.language": "en, es",
+	"cSpell.words": [
+		"lucide",
+		"mixkit",
+		"nuxt",
+		"Nuxt",
+		"nuxthub",
+		"postgresql",
+		"supabase",
+		"Supabase",
+		"tailwindcss",
+		"nums"
+	],
+	"files.associations": {
+		"*.css": "tailwindcss"
+	},
+	"editor.quickSuggestions": {
+		"strings": true
+	},
+	"css.validate": false
+}
