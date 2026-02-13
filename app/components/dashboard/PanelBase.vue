@@ -1,8 +1,16 @@
 <script setup lang="ts">
-defineProps<{
-  id: string
-  title: string
-}>()
+const { id, title, description } = defineProps<{
+	id: string;
+	title: string;
+	description?: string;
+}>();
+
+const config = useRuntimeConfig();
+
+useSeoMeta({
+	title: title + " - " + config.public.appName,
+	description: description,
+});
 </script>
 
 <template>

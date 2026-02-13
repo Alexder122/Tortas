@@ -1,17 +1,27 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
-  debug: false,
+	compatibilityDate: "2025-07-15",
+	devtools: { enabled: true },
+	debug: false,
 	ssr: true,
-  modules: ['@nuxt/ui'],
-  css: ["~/assets/css/main.css"],
-  app: {
+	modules: ["@nuxt/ui", "@nuxthub/core"],
+	css: ["~/assets/css/main.css"],
+	app: {
 		head: {
 			title: import.meta.env.APP_NAME || "Nuxt App",
 		},
 	},
-  runtimeConfig: {
+	hub: {
+		db: {
+			dialect: "postgresql",
+			driver: "postgres-js",
+			casing: "snake_case",
+			connection: {
+				connectionString: import.meta.env.DATABASE_URL || "",
+			},
+		},
+	},
+	runtimeConfig: {
 		supabaseUrl: import.meta.env.SUPABASE_URL,
 		supabasePublishableKey: import.meta.env.SUPABASE_PUBLISHABLE_KEY,
 
@@ -19,4 +29,7 @@ export default defineNuxtConfig({
 			appName: import.meta.env.APP_NAME || "Nuxt App",
 		},
 	},
-})
+	routeRules: {
+		"/": { redirect: "/login" },
+	},
+});

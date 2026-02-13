@@ -3,14 +3,15 @@
 	"cSpell.words": [
 		"lucide",
 		"mixkit",
+		"nums",
 		"nuxt",
 		"Nuxt",
 		"nuxthub",
 		"postgresql",
+		"Recuérdame",
 		"supabase",
 		"Supabase",
-		"tailwindcss",
-		"nums"
+		"tailwindcss"
 	],
 	"files.associations": {
 		"*.css": "tailwindcss"

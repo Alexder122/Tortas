@@ -1,59 +1,45 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { NavigationMenuItem } from "@nuxt/ui";
 
-const toast = useToast()
+const open = ref(false);
 
-const open = ref(false)
+const links = [
+	[
+		{
+			label: "Inicio",
+			icon: "i-lucide-house",
+			to: "/app",
+			onSelect: () => {
+				open.value = false;
+			},
+		},
+		{
+			label: "Categorías",
+			icon: "i-lucide-list",
+			to: "/app/categories",
+			onSelect: () => {
+				open.value = false;
+			},
+		},
+		{
+			label: "Productos",
+			icon: "i-lucide-list",
+			to: "/app/products",
+			onSelect: () => {
+				open.value = false;
+			},
+		},
+	],
+	[],
+] satisfies NavigationMenuItem[][];
 
-const links = [[{
-  label: 'Inicio',
-  icon: 'i-lucide-house',
-  to: '/app',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Niveles de dificultad',
-  icon: 'i-lucide-list',
-  to: '/app/difficulty-levels',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Grupos musculares',
-  icon: 'i-lucide-list',
-  to: '/app/muscle-groups',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Equipamiento',
-  icon: 'i-lucide-list',
-  to: '/app/equipment',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Ejercicios',
-  icon: 'i-lucide-dumbbell',
-  to: '/app/exercises',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: 'Rutinas',
-  icon: 'i-lucide-dumbbell',
-  to: '/app/routines',
-  onSelect: () => {
-    open.value = false
-  }
-}], []] satisfies NavigationMenuItem[][]
-
-const groups = computed(() => [{
-  id: 'links',
-  label: 'Ir a',
-  items: links.flat()
-}])
+const groups = computed(() => [
+	{
+		id: "links",
+		label: "Ir a",
+		items: links.flat(),
+	},
+]);
 </script>
 
 <template>

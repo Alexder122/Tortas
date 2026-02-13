@@ -1,9 +1,9 @@
 <script setup lang="ts">
 defineProps<{
-    placeholder?: string
-}>()
+	placeholder?: string;
+}>();
 
-const searchQuery = defineModel<string>()
+const searchQuery = defineModel<string>();
 </script>
 
 <template>

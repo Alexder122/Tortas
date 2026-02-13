@@ -1,63 +1,78 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
+import type { DropdownMenuItem } from "@nuxt/ui";
 
 defineProps<{
-  collapsed?: boolean
-}>()
+	collapsed?: boolean;
+}>();
 
-const colorMode = useColorMode()
+const colorMode = useColorMode();
 
 const user = ref({
-  name: 'Administrador',
-  avatar: {
-    src: 'https://github.com/administrador.png',
-    alt: 'Administrador Avatar'
-  }
-})
+	name: "Administrador",
+	avatar: {
+		src: "https://github.com/administrador.png",
+		alt: "Administrador Avatar",
+	},
+});
 
-const items = computed<DropdownMenuItem[][]>(() => ([[{
-  type: 'label',
-  label: user.value.name,
-  avatar: user.value.avatar
-}], [{
-  label: 'Perfil',
-  icon: 'i-lucide-user',
-//   to: '/profile'
-},{
-  label: 'Ajustes',
-  icon: 'i-lucide-settings',
-//   to: '/settings'
-},{
-  label: 'Apariencia',
-  icon: 'i-lucide-sun-moon',
-  children: [{
-    label: 'Claro',
-    icon: 'i-lucide-sun',
-    type: 'checkbox',
-    checked: colorMode.value === 'light',
-    onSelect(e: Event) {
-      e.preventDefault()
+const items = computed<DropdownMenuItem[][]>(() => [
+	[
+		{
+			type: "label",
+			label: user.value.name,
+			avatar: user.value.avatar,
+		},
+	],
+	[
+		{
+			label: "Perfil",
+			icon: "i-lucide-user",
+			//   to: '/profile'
+		},
+		{
+			label: "Ajustes",
+			icon: "i-lucide-settings",
+			//   to: '/settings'
+		},
+		{
+			label: "Apariencia",
+			icon: "i-lucide-sun-moon",
+			children: [
+				{
+					label: "Claro",
+					icon: "i-lucide-sun",
+					type: "checkbox",
+					checked: colorMode.value === "light",
+					onSelect(e: Event) {
+						e.preventDefault();
 
-      colorMode.preference = 'light'
-    }
-  }, {
-    label: 'Oscuro',
-    icon: 'i-lucide-moon',
-    type: 'checkbox',
-    checked: colorMode.value === 'dark',
-    onUpdateChecked(checked: boolean) {
-      if (checked) {
-        colorMode.preference = 'dark'
-      }
-    },
-    onSelect(e: Event) {
-      e.preventDefault()
-    }
-  }]
-}], [{
-  label: 'Cerrar sesión',
-  icon: 'i-lucide-log-out'
-}]]))
+						colorMode.preference = "light";
+					},
+				},
+				{
+					label: "Oscuro",
+					icon: "i-lucide-moon",
+					type: "checkbox",
+					checked: colorMode.value === "dark",
+					onUpdateChecked(checked: boolean) {
+						if (checked) {
+							colorMode.preference = "dark";
+						}
+					},
+					onSelect(e: Event) {
+						e.preventDefault();
+					},
+				},
+			],
+		},
+	],
+	[
+		{
+			label: "Cerrar sesión",
+			icon: "i-lucide-log-out",
+		},
+	],
+]);
 </script>
 
 <template>

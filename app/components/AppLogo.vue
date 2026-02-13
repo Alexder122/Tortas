@@ -1,10 +1,9 @@
 <script setup lang="ts">
 defineProps<{
-    collapsed?: boolean
-}>()
+	collapsed?: boolean;
+}>();
 
-const config = useRuntimeConfig()
-
+const config = useRuntimeConfig();
 </script>
 
 <template>
