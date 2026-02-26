@@ -1,288 +1,375 @@
-<script setup lang="ts">
-import type { FormSubmitEvent } from "@nuxt/ui";
-import * as z from "zod";
-
-const toast = useToast();
-
-// Esquema de validación con Zod
-const schema = z.object({
-	id: z.number().optional(),
-	name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-	description: z.string().optional(),
-	order: z
-		.number("Se debe ingresar un número mayor a 0")
-		.min(1, "El orden debe ser mayor a 0"),
-});
-
-type Schema = z.output<typeof schema>;
-
-// Estado del modal y formulario
-const isModalOpen = ref(false);
-const isEditMode = ref(false);
-const isDeleteModalOpen = ref(false);
-const isSubmittingLevelForm = ref(false);
-const selectedLevel = ref<Schema | null>(null);
-const levelToDelete = ref<Schema | null>(null);
-
-// Datos del formulario
-const state = reactive({
-	name: "",
-	description: "",
-	order: 1,
-});
-
-const { data: difficultyLevels, refresh } = await useFetch(
-	"/api/difficulty-levels",
-	{
-		method: "get",
-	},
-);
-
-// Ordenar por orden
-const sortedLevels = computed(() => {
-	if (!difficultyLevels.value) return [];
-	return [...difficultyLevels.value].sort((a, b) => a.order - b.order);
-});
-
-// Función para abrir modal de crear
-const openCreateModal = () => {
-	isEditMode.value = false;
-	selectedLevel.value = null;
-	Object.assign(state, {
-		name: "",
-		description: "",
-		order: sortedLevels.value.length + 1,
-	});
-	isModalOpen.value = true;
-};
-
-// Función para abrir modal de editar
-const openEditModal = (level: Schema | null) => {
-	isEditMode.value = true;
-	selectedLevel.value = level;
-	Object.assign(state, {
-		name: level?.name ?? "",
-		description: level?.description ?? "",
-		order: level?.order ?? 1,
-	});
-	isModalOpen.value = true;
-};
-
-// Función para guardar con validación
-const onSubmit = async (event: FormSubmitEvent<Schema>) => {
-	isSubmittingLevelForm.value = true;
-	try {
-		if (isEditMode.value && selectedLevel.value) {
-			// Actualizar nivel existente
-			await $fetch(`/api/difficulty-levels/${selectedLevel.value.id}`, {
-				method: "PUT",
-				body: {
-					name: state.name,
-					description: state.description,
-					order: state.order,
-				},
-			});
-
-			toast.add({
-				title: "Nivel actualizado",
-				description: "El nivel de dificultad se actualizó exitosamente",
-				color: "success",
-			});
-		} else {
-			// Crear nuevo nivel
-			await $fetch("/api/difficulty-levels", {
-				method: "POST",
-				body: {
-					name: state.name,
-					description: state.description,
-					order: state.order,
-				},
-			});
-
-			toast.add({
-				title: "Nivel creado",
-				description: "El nivel de dificultad se creó exitosamente",
-				color: "success",
-			});
-		}
-
-		await refresh();
-		isModalOpen.value = false;
-	} catch (error) {
-		toast.add({
-			title: "Error",
-			description: "Ocurrió un error al guardar el nivel de dificultad",
-			color: "error",
-		});
-	} finally {
-		isSubmittingLevelForm.value = false;
-	}
-};
-
-// Función para abrir modal de confirmación de eliminación
-const openDeleteModal = (level: Schema | null) => {
-	levelToDelete.value = level;
-	isDeleteModalOpen.value = true;
-};
-
-// Función para confirmar eliminación
-const confirmDelete = async () => {
-	if (!levelToDelete.value) return;
-
-	try {
-		await $fetch(`/api/difficulty-levels/${levelToDelete.value.id}`, {
-			method: "DELETE",
-		});
-
-		toast.add({
-			title: "Nivel eliminado",
-			description: "El nivel de dificultad se eliminó exitosamente",
-			color: "success",
-		});
-
-		await refresh();
-		isDeleteModalOpen.value = false;
-		levelToDelete.value = null;
-	} catch (error) {
-		toast.add({
-			title: "Error",
-			description: "No se pudo eliminar el nivel de dificultad",
-			color: "error",
-		});
-	}
-};
-
-// Filtro de búsqueda
-const searchQuery = ref("");
-const filteredLevels = computed(() => {
-	if (!searchQuery.value) return sortedLevels.value;
-
-	return sortedLevels.value.filter((level) =>
-		level.name.toLowerCase().includes(searchQuery.value.toLowerCase()),
-	);
-});
-</script>
-
 <template>
-    <DashboardPanelBase id="difficulty-levels" title="Niveles de Dificultad">
-        <template #header-right>
-            <UButton icon="i-lucide-plus" label="Nuevo Nivel" size="md" :ui="{
-                label: 'hidden sm:inline-block'
-            }" @click="openCreateModal" />
+  <DashboardPanelBase id="sales-history" title="Historial de Ventas">
+    <!-- Tabs para cambiar entre vistas -->
+    <div class="mb-6">
+      <UTabs
+        :items="tabItems"
+        v-model="activeTab"
+        class="w-full"
+      />
+    </div>
+
+    <!-- FILTROS - Siempre visibles en ambos tabs -->
+    <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-end justify-between">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <UFormField label="Fecha desde">
+          <UInput
+            v-model="dateFrom"
+            type="date"
+            class="w-full sm:w-auto"
+          />
+        </UFormField>
+        <UFormField label="Fecha hasta">
+          <UInput
+            v-model="dateTo"
+            type="date"
+            class="w-full sm:w-auto"
+          />
+        </UFormField>
+        <UButton
+          icon="i-lucide-filter"
+          color="primary"
+          variant="soft"
+          @click="applyDateFilter"
+        >
+          Filtrar
+        </UButton>
+        <UButton
+          v-if="dateFrom || dateTo"
+          icon="i-lucide-x"
+          color="error"
+          variant="ghost"
+          @click="clearDateFilter"
+        >
+          Limpiar
+        </UButton>
+      </div>
+      
+      <UButton
+        icon="i-lucide-refresh-cw"
+        color="secondary"
+        variant="soft"
+        @click="refreshData"
+      >
+        Actualizar
+      </UButton>
+    </div>
+
+    <!-- MÉTRICAS - Siempre visibles (fuera del tab) -->
+    <div class="mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <UCard>
+          <div class="flex items-center gap-4">
+            <div class="p-3 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
+              <UIcon name="i-lucide-shopping-bag" class="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Ventas</p>
+              <p class="text-2xl font-bold">{{ metrics.totalSales }}</p>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard>
+          <div class="flex items-center gap-4">
+            <div class="p-3 bg-success-100 dark:bg-success-900/20 rounded-lg">
+              <UIcon name="i-lucide-dollar-sign" class="w-6 h-6 text-success-600 dark:text-success-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Ingresos Totales</p>
+              <p class="text-2xl font-bold">${{ metrics.totalRevenue.toLocaleString() }}</p>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard>
+          <div class="flex items-center gap-4">
+            <div class="p-3 bg-info-100 dark:bg-info-900/20 rounded-lg">
+              <UIcon name="i-lucide-package" class="w-6 h-6 text-info-600 dark:text-info-400" />
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Productos Vendidos</p>
+              <p class="text-2xl font-bold">{{ metrics.totalProducts }}</p>
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </div>
+
+    <!-- CONTENIDO DE TABS -->
+    
+    <!-- Tab: Gráficos (anteriormente Métricas) -->
+    <div v-if="activeTab === 0" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Ventas por día -->
+        <UCard>
+          <template #header>
+            <h3 class="text-lg font-semibold">Ventas por Día</h3>
+          </template>
+          <div class="h-64 flex items-center justify-center text-gray-500">
+            <p>Gráfico de ventas (próximamente)</p>
+          </div>
+        </UCard>
+
+        <!-- Productos más vendidos -->
+        <UCard>
+          <template #header>
+            <h3 class="text-lg font-semibold">Productos más Vendidos</h3>
+          </template>
+          <div class="space-y-4">
+            <div v-for="product in metrics.topProducts" :key="product.id" class="flex items-center justify-between">
+              <div>
+                <p class="font-medium">{{ product.name }}</p>
+                <p class="text-sm text-gray-500">{{ product.quantity }} unidades</p>
+              </div>
+              <p class="font-semibold text-primary-600">${{ product.revenue.toLocaleString() }}</p>
+            </div>
+            <div v-if="metrics.topProducts.length === 0" class="text-center py-8 text-gray-500">
+              No hay datos suficientes
+            </div>
+          </div>
+        </UCard>
+      </div>
+    </div>
+
+    <!-- Tab: Registros -->
+    <div v-else-if="activeTab === 1" class="space-y-6">
+      <UCard>
+        <template #header>
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 class="text-lg font-semibold">Registro de Ventas</h3>
+            <UInput
+              v-model="tableSearch"
+              placeholder="Buscar en ventas..."
+              icon="i-lucide-search"
+              class="w-full sm:w-64"
+            />
+          </div>
         </template>
 
-        <!-- Barra de búsqueda -->
-        <div class="mb-6">
-            <FormInputSearch v-model="searchQuery" placeholder="Buscar niveles de dificultad..." />
-        </div>
+        <UTable
+          :loading="pending"
+          :columns="columns"
+          :rows="paginatedSales"
+          class="w-full"
+        >
+          <template #total-data="{ row }">
+            <span class="font-semibold text-primary-600">${{ Number(row.total).toLocaleString() }}</span>
+          </template>
 
-        <!-- Grid de cards de niveles -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <UCard v-for="level in filteredLevels" :key="level.id" class="hover:shadow-lg transition-shadow">
-                <template #header>
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                <UBadge :label="level.order.toString()" size="sm" color="info" />
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                    {{ level.name }}
-                                </h3>
-                            </div>
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
-                                {{ level.description || 'Sin descripción' }}
-                            </p>
-                        </div>
-                    </div>
-                </template>
+          <template #created_at-data="{ row }">
+            {{ new Date(row.created_at).toLocaleString() }}
+          </template>
 
-                <div class="space-y-2">
-                    <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">Creado</p>
-                        <p class="text-sm font-medium">{{ new Date(level.created_at).toLocaleDateString() }}</p>
-                    </div>
+          <template #items-data="{ row }">
+            <UPopover>
+              <UButton color="primary" variant="soft" size="xs">
+                {{ row.items?.length || 0 }} productos
+              </UButton>
+              <template #panel>
+                <div class="p-4 max-w-xs">
+                  <p class="font-semibold mb-2">Productos:</p>
+                  <div v-for="item in row.items" :key="item.id" class="text-sm mb-2">
+                    <p>{{ item.product?.name }} x{{ item.quantity }}</p>
+                    <p class="text-gray-500">${{ Number(item.subtotal).toLocaleString() }}</p>
+                  </div>
                 </div>
+              </template>
+            </UPopover>
+          </template>
 
-                <template #footer>
-                    <div class="flex gap-2 justify-end">
-                        <UTooltip text="Editar">
-                            <UButton icon="i-lucide-pencil" size="sm" color="secondary" variant="soft"
-                                @click="openEditModal(level as Schema)" />
-                        </UTooltip>
-                        <UTooltip text="Eliminar">
-                            <UButton icon="i-lucide-trash" size="sm" color="error" variant="soft"
-                                @click="openDeleteModal(level as Schema)" />
-                        </UTooltip>
-                    </div>
-                </template>
-            </UCard>
+          <template #actions-data="{ row }">
+            <UDropdown :items="actionItems(row)">
+              <UButton color="secondary" variant="soft" icon="i-lucide-more-vertical" size="xs" />
+            </UDropdown>
+          </template>
+        </UTable>
+
+        <!-- Paginación -->
+        <div class="flex justify-between items-center mt-4">
+          <p class="text-sm text-gray-500">
+            Mostrando {{ paginatedSales.length }} de {{ filteredSales.length }} ventas
+          </p>
+          <UPagination
+            v-model="page"
+            :page-count="pageSize"
+            :total="filteredSales.length"
+          />
         </div>
-
-        <!-- Mensaje cuando no hay niveles -->
-        <div v-if="filteredLevels.length === 0" class="text-center py-12">
-            <p class="text-gray-500 dark:text-gray-400">
-                {{ searchQuery ? 'No se encontraron niveles de dificultad' : 'No hay niveles de dificultad creados' }}
-            </p>
-            <UButton v-if="!searchQuery" icon="i-lucide-plus" label="Crear primer nivel" class="mt-4"
-                @click="openCreateModal" />
-        </div>
-
-        <!-- Modal para crear/editar nivel -->
-        <UModal v-model:open="isModalOpen"
-            :title="isEditMode ? 'Editar Nivel de Dificultad' : 'Nuevo Nivel de Dificultad'"
-            :description="isEditMode ? 'Modifica los datos del nivel de dificultad' : 'Completa el formulario para crear un nuevo nivel de dificultad'"
-            :ui="{ footer: 'justify-end' }">
-            <template #body>
-                <UForm id="level-form" :schema="schema" :state="state" class="space-y-4" @submit="onSubmit" >
-                    <!-- Nombre -->
-                    <UFormField label="Nombre" name="name" required>
-                        <UInput v-model="state.name" placeholder="Ej: Principiante" class="w-full" size="lg" />
-                    </UFormField>
-
-                    <!-- Descripción -->
-                    <UFormField label="Descripción" name="description">
-                        <UTextarea v-model="state.description" placeholder="Describe el nivel de dificultad..."
-                            class="w-full" :rows="3" />
-                    </UFormField>
-
-                    <!-- Orden -->
-                    <UFormField label="Orden" name="order" required>
-                        <UInput v-model.number="state.order" type="number" placeholder="1" class="w-full" size="lg"
-                            min="1" />
-                    </UFormField>
-                </UForm>
-            </template>
-
-            <template #footer>
-                <UButton color="secondary" variant="soft" label="Cancelar" :disabled="isSubmittingLevelForm" @click="isModalOpen = false" />
-                <UButton type="submit" icon="i-lucide-save" :label="isEditMode ? 'Actualizar' : 'Crear'"
-                    :loading="isSubmittingLevelForm" form="level-form" />
-            </template>
-        </UModal>
-
-        <!-- Modal de confirmación de eliminación -->
-        <UModal v-model:open="isDeleteModalOpen" title="Confirmar eliminación"
-            description="Esta acción es permanente y no se puede revertir" :ui="{ footer: 'justify-end' }">
-            <template #body>
-                <div class="flex items-start gap-3 mb-4">
-                    <div class="p-2 bg-error-100 dark:bg-error-900/20 rounded-lg">
-                        <UIcon name="i-lucide-alert-triangle" class="w-5 h-5 text-error-600 dark:text-error-400" />
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-gray-700 dark:text-gray-300">
-                            ¿Estás seguro de que deseas eliminar el nivel de dificultad
-                            <span class="font-semibold">{{ levelToDelete?.name }}</span>?
-                        </p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            Esta acción no se puede deshacer.
-                        </p>
-                    </div>
-                </div>
-            </template>
-
-            <template #footer>
-                <UButton color="secondary" variant="soft" label="Cancelar" @click="isDeleteModalOpen = false" />
-                <UButton color="error" icon="i-lucide-trash" label="Eliminar" loading-auto @click="confirmDelete" />
-            </template>
-        </UModal>
-    </DashboardPanelBase>
+      </UCard>
+    </div>
+  </DashboardPanelBase>
 </template>
+
+<script setup lang="ts">
+const toast = useToast();
+const activeTab = ref(0); // 0 = Gráficos, 1 = Registros
+const dateFrom = ref('');
+const dateTo = ref('');
+const tableSearch = ref('');
+const page = ref(1);
+const pageSize = ref(10);
+
+// Items para los tabs
+const tabItems = [
+  { label: 'Gráficos', icon: 'i-lucide-bar-chart-3' },
+  { label: 'Registros', icon: 'i-lucide-table' },
+];
+
+// Columnas de la tabla
+const columns = [
+  { key: 'id', label: 'ID' },
+  { key: 'created_at', label: 'Fecha' },
+  { key: 'items', label: 'Productos' },
+  { key: 'total', label: 'Total' },
+  { key: 'actions', label: 'Acciones' },
+];
+
+// Obtener ventas
+const { data: sales, pending, refresh } = await useAsyncData(
+  'sales-history',
+  async () => {
+    let url = '/api/sales';
+    const params = new URLSearchParams();
+    
+    if (dateFrom.value) params.append('from', dateFrom.value);
+    if (dateTo.value) params.append('to', dateTo.value);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return $fetch(url);
+  }
+);
+
+// Ventas filtradas por búsqueda
+const filteredSales = computed(() => {
+  if (!sales.value) return [];
+  if (!tableSearch.value) return sales.value;
+  
+  const search = tableSearch.value.toLowerCase();
+  return sales.value.filter((sale: any) => {
+    return (
+      sale.id.toString().includes(search) ||
+      sale.items?.some((item: any) => 
+        item.product?.name.toLowerCase().includes(search)
+      )
+    );
+  });
+});
+
+// Ventas paginadas
+const paginatedSales = computed(() => {
+  const start = (page.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredSales.value.slice(start, end);
+});
+
+// Calcular métricas
+const metrics = computed(() => {
+  if (!sales.value) {
+    return {
+      totalSales: 0,
+      totalRevenue: 0,
+      totalProducts: 0,
+      topProducts: []
+    };
+  }
+
+  const totalSales = sales.value.length;
+  const totalRevenue = sales.value.reduce((sum: number, sale: any) => 
+    sum + Number(sale.total), 0
+  );
+  
+  // Contar productos vendidos
+  const productCount: Record<number, { id: number; name: string; quantity: number; revenue: number }> = {};
+  
+  sales.value.forEach((sale: any) => {
+    sale.items?.forEach((item: any) => {
+      if (!productCount[item.product_id]) {
+        productCount[item.product_id] = {
+          id: item.product_id,
+          name: item.product?.name || 'Producto',
+          quantity: 0,
+          revenue: 0
+        };
+      }
+      productCount[item.product_id].quantity += item.quantity;
+      productCount[item.product_id].revenue += Number(item.subtotal);
+    });
+  });
+
+  const totalProducts = Object.values(productCount).reduce(
+    (sum: number, p: any) => sum + p.quantity, 0
+  );
+
+  // Top 5 productos más vendidos
+  const topProducts = Object.values(productCount)
+    .sort((a: any, b: any) => b.quantity - a.quantity)
+    .slice(0, 5);
+
+  return {
+    totalSales,
+    totalRevenue,
+    totalProducts,
+    topProducts
+  };
+});
+
+// Aplicar filtro de fechas
+const applyDateFilter = () => {
+  page.value = 1;
+  refresh();
+  toast.add({
+    title: 'Filtro aplicado',
+    description: 'Datos actualizados con el rango de fechas',
+    color: 'success',
+  });
+};
+
+// Limpiar filtro de fechas
+const clearDateFilter = () => {
+  dateFrom.value = '';
+  dateTo.value = '';
+  page.value = 1;
+  refresh();
+};
+
+// Actualizar datos
+const refreshData = () => {
+  page.value = 1;
+  refresh();
+  toast.add({
+    title: 'Datos actualizados',
+    description: 'La información se ha refrescado correctamente',
+    color: 'success',
+  });
+};
+
+// Acciones para cada fila
+const actionItems = (row: any) => [
+  [{
+    label: 'Ver detalles',
+    icon: 'i-lucide-eye',
+    click: () => {
+      toast.add({
+        title: 'Venta #' + row.id,
+        description: `Total: $${Number(row.total).toLocaleString()}`,
+        color: 'info',
+      });
+    }
+  }],
+  [{
+    label: 'Imprimir ticket',
+    icon: 'i-lucide-printer',
+    click: () => {
+      toast.add({
+        title: 'Imprimiendo...',
+        description: 'Funcionalidad próximamente',
+        color: 'warning',
+      });
+    }
+  }]
+];
+</script>

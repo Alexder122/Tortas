@@ -14,7 +14,7 @@ const links = [
 			},
 		},
 		{
-			label: "Categorías",
+			label: "Historial",
 			icon: "i-lucide-list",
 			to: "/app/categories",
 			onSelect: () => {
