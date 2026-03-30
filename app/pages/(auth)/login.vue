@@ -8,6 +8,9 @@ definePageMeta({
 
 const router = useRouter();
 const toast = useToast();
+const authUser = useCookie<string | null>("auth_user", {
+	sameSite: "lax",
+});
 
 const fields: AuthFormField[] = [
 	{
@@ -40,20 +43,35 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>;
 
-function onSubmit(payload: FormSubmitEvent<Schema>) {
-	// TODO: Implementar lógica de autenticación con Supabase
+async function onSubmit(payload: FormSubmitEvent<Schema>) {
+	try {
+		const response = await $fetch<{ ok: boolean; email: string }>("/api/auth/login", {
+			method: "POST",
+			body: {
+				email: payload.data.email,
+				password: payload.data.password,
+			},
+		});
 
-	router.push("/app");
+		authUser.value = response.email;
+		router.push("/app");
+	} catch {
+		toast.add({
+			title: "Credenciales incorrectas",
+			description: "Verifique su correo y contrasena.",
+			color: "error",
+		});
+	}
 }
 </script>
 
 <template>
-  <UPageCard class="w-full max-w-md">
+	<UPageCard class="w-full max-w-md border-pink-200/70 bg-linear-to-b from-pink-50 to-white dark:from-pink-950/30 dark:to-transparent">
     <UAuthForm
       :schema="schema"
       title="Iniciar sesión"
       description="Ingrese sus credenciales para acceder a su cuenta."
-      icon="i-lucide-user"
+			icon="i-lucide-sparkles"
       :fields="fields"
       @submit="onSubmit"
     />

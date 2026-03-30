@@ -11,6 +11,7 @@
       color="success"
       :loading="isProcessing"
       :disabled="items.length === 0"
+      class="transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95"
       @click="$emit('checkout')"
     >
       <template #leading>
@@ -25,6 +26,7 @@
       size="sm"
       color="error"
       variant="soft"
+      class="transition-all duration-200 hover:shadow-md hover:scale-105 active:scale-95"
       @click="$emit('clear')"
     >
       Limpiar carrito

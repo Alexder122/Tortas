@@ -1,4 +1,12 @@
-import { pgTable, serial, varchar, numeric, timestamp,integer } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  serial,
+  varchar,
+  numeric,
+  timestamp,
+  integer,
+  text,
+} from "drizzle-orm/pg-core";
 
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
@@ -21,4 +29,13 @@ export const sale_items = pgTable("sale_items", {
   unit_price: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
   subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull(),
   created_at: timestamp("created_at").defaultNow(),
+});
+
+export const app_credentials = pgTable("app_credentials", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  password_hash: text("password_hash").notNull(),
+  password_salt: text("password_salt").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
 });

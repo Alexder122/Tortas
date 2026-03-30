@@ -7,7 +7,7 @@ const links = [
 	[
 		{
 			label: "Inicio",
-			icon: "i-lucide-house",
+      icon: "i-lucide-store",
 			to: "/app",
 			onSelect: () => {
 				open.value = false;
@@ -15,20 +15,28 @@ const links = [
 		},
 		{
 			label: "Historial",
-			icon: "i-lucide-list",
-			to: "/app/categories",
+      icon: "i-lucide-chart-line",
+      to: "/app/sales",
 			onSelect: () => {
 				open.value = false;
 			},
 		},
 		{
 			label: "Productos",
-			icon: "i-lucide-list",
+      icon: "i-lucide-cake-slice",
 			to: "/app/products",
 			onSelect: () => {
 				open.value = false;
 			},
 		},
+    {
+      label: "Credenciales",
+      icon: "i-lucide-shield-check",
+      to: "/app/settings",
+      onSelect: () => {
+        open.value = false;
+      },
+    },
 	],
 	[],
 ] satisfies NavigationMenuItem[][];
@@ -49,7 +57,7 @@ const groups = computed(() => [
       v-model:open="open"
       collapsible
       resizable
-      class="bg-elevated/25"
+      class="bg-linear-to-b from-pink-500/10 via-rose-500/5 to-transparent"
       :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">

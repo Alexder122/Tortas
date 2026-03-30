@@ -20,9 +20,18 @@ export default eventHandler(async (event) => {
     const validated = createSaleSchema.parse(body);
     
     // Crear la venta
-    const [newSale] = await db.insert(sales).values({
+    const result = await db.insert(sales).values({
       total: validated.total.toString()
     }).returning();
+
+    if (!result || result.length === 0) {
+      throw new Error('No se pudo crear la venta');
+    }
+
+    const newSale = result[0];
+    if (!newSale) {
+      throw new Error('No se pudo crear la venta');
+    }
     
     // Crear los items de la venta
     const saleItems = validated.items.map(item => ({
@@ -35,12 +44,18 @@ export default eventHandler(async (event) => {
     
     await db.insert(sale_items).values(saleItems);
     
-    return newSale;
-  } catch (error) {
+    // Retornar datos con folio como id padded a 10 dígitos
+    return {
+      id: newSale.id,
+      folio: String(newSale.id).padStart(10, '0'),
+      total: newSale.total,
+      created_at: newSale.created_at
+    };
+  } catch (error: any) {
     console.error("Error al crear venta:", error);
     throw createError({
       statusCode: 400,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Error al procesar la venta'
     });
   }
 });

@@ -1,5 +1,57 @@
 <template>
   <DashboardPanelBase id="pos" title="Punto de Venta">
+    <Transition
+      enter-active-class="transition duration-250 ease-out"
+      enter-from-class="translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-2 opacity-0"
+    >
+      <div
+        v-if="saleAlert.open"
+        class="pointer-events-none fixed inset-x-0 top-6 z-50 flex justify-center px-4"
+      >
+        <UCard
+          class="pointer-events-auto w-full max-w-2xl shadow-2xl"
+          :class="saleAlert.type === 'success'
+            ? 'border-green-300 bg-linear-to-r from-green-100 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/20'
+            : 'border-rose-300 bg-linear-to-r from-rose-100 to-pink-50 dark:from-rose-900/40 dark:to-pink-900/20'"
+        >
+          <div class="flex items-start gap-4">
+            <UIcon
+              :name="saleAlert.type === 'success' ? 'i-lucide-circle-check-big' : 'i-lucide-triangle-alert'"
+              class="mt-1 h-7 w-7 shrink-0"
+              :class="saleAlert.type === 'success' ? 'text-green-600' : 'text-rose-600'"
+            />
+
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-bold">{{ saleAlert.title }}</h3>
+              <p class="text-sm text-muted mt-1">{{ saleAlert.description }}</p>
+            </div>
+
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              @click="saleAlert.open = false"
+            />
+          </div>
+        </UCard>
+      </div>
+    </Transition>
+
+    <UCard class="mb-6 border-pink-200/70 bg-linear-to-r from-pink-100/70 to-white dark:from-pink-950/30 dark:to-transparent">
+      <div class="flex items-center gap-3">
+        <UIcon name="i-lucide-badge-dollar-sign" class="h-8 w-8 text-pink-500" />
+        <div>
+          <h2 class="text-lg font-bold">Venta rapida y visual</h2>
+          <p class="text-sm text-muted">Busca, agrega y cobra en una sola pantalla con estilo consistente.</p>
+        </div>
+      </div>
+    </UCard>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Columna izquierda: Productos -->
       <div class="lg:col-span-2">
@@ -17,7 +69,7 @@
         
         <div v-else-if="error" class="text-center py-12">
           <p class="text-error-500">Error al cargar productos</p>
-          <UButton class="mt-4" @click="refresh">Reintentar</UButton>
+          <UButton class="mt-4" @click="() => refresh()">Reintentar</UButton>
         </div>
         
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[calc(100vh-200px)] overflow-y-auto p-1">
@@ -39,7 +91,7 @@
           
           <div class="space-y-4">
             <!-- Items del carrito -->
-            <div v-if="cartItems.length > 0" class="max-h-[400px] overflow-y-auto">
+            <div v-if="cartItems.length > 0" class="max-h-100 overflow-y-auto">
               <CartItem
                 v-for="item in cartItems"
                 :key="item.product.id"
@@ -77,8 +129,32 @@ import CartItem from '~/components/pos/CartItem.vue'
 import CartSummary from '~/components/pos/CartSummary.vue'
 
 const toast = useToast();
+const { playSound } = useAudio();
 const searchQuery = ref('');
 const isProcessingSale = ref(false);
+type SaleAlertType = 'success' | 'error';
+const saleAlert = reactive({
+  open: false,
+  type: 'success' as SaleAlertType,
+  title: '',
+  description: ''
+});
+let saleAlertTimer: ReturnType<typeof setTimeout> | null = null;
+
+const showSaleAlert = (type: SaleAlertType, title: string, description: string) => {
+  saleAlert.type = type;
+  saleAlert.title = title;
+  saleAlert.description = description;
+  saleAlert.open = true;
+
+  if (saleAlertTimer) {
+    clearTimeout(saleAlertTimer);
+  }
+
+  saleAlertTimer = setTimeout(() => {
+    saleAlert.open = false;
+  }, 4500);
+};
 
 // Estado del carrito
 interface CartItem {
@@ -124,11 +200,11 @@ const addToCart = (product: any) => {
     });
   }
   
+  playSound('notification');
   toast.add({
     title: 'Producto agregado',
     description: `${product.name} agregado al carrito`,
-    color: 'success',
-    timeout: 2000
+    color: 'success'
   });
 };
 
@@ -177,24 +253,24 @@ const processSale = async () => {
       body: saleData
     });
     
-    toast.add({
-      title: 'Venta procesada',
-      description: 'La venta se registró exitosamente',
-      color: 'success'
-    });
+    playSound('success');
+    showSaleAlert('success', 'Venta procesada correctamente', 'La transacción se registró exitosamente en el sistema.');
     
     // Limpiar carrito
     clearCart();
     
   } catch (error: any) {
     console.error('Error al procesar venta:', error);
-    toast.add({
-      title: 'Error',
-      description: error.data?.message || 'No se pudo procesar la venta',
-      color: 'error'
-    });
+    playSound('error');
+    showSaleAlert('error', 'No se pudo procesar la venta', error.data?.message || 'Intente nuevamente en un momento.');
   } finally {
     isProcessingSale.value = false;
   }
 };
+
+onBeforeUnmount(() => {
+  if (saleAlertTimer) {
+    clearTimeout(saleAlertTimer);
+  }
+});
 </script>

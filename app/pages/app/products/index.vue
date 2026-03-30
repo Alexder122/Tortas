@@ -1,5 +1,15 @@
 <template>
     <DashboardPanelBase id="products" title="Productos">
+        <UCard class="mb-6 border-pink-200/70 bg-linear-to-r from-pink-100/70 to-white dark:from-pink-950/30 dark:to-transparent">
+            <div class="flex items-center gap-3">
+                <UIcon name="i-lucide-candy" class="h-8 w-8 text-pink-500" />
+                <div>
+                    <h2 class="text-lg font-bold">Catalogo de productos</h2>
+                    <p class="text-sm text-muted">Gestiona tus productos con un estilo mas visual y rapido.</p>
+                </div>
+            </div>
+        </UCard>
+
         <template #header-right>
             <UButton icon="i-lucide-plus" label="Nuevo Producto" size="md" :ui="{
                 label: 'hidden sm:inline-block'
@@ -38,7 +48,7 @@
                     <!-- Fecha de creación -->
                     <div class="pt-2 border-t border-gray-200 dark:border-gray-700">
                         <p class="text-xs text-gray-500 dark:text-gray-400">Creado</p>
-                        <p class="text-sm font-medium">{{ new Date(product.created_at).toLocaleDateString() }}</p>
+                        <p class="text-sm font-medium">{{ new Date(product.created_at || Date.now()).toLocaleDateString() }}</p>
                     </div>
                 </div>
 
@@ -137,26 +147,30 @@ import type { FormSubmitEvent } from "@nuxt/ui";
 import * as z from "zod";
 
 const toast = useToast();
+const { playSound } = useAudio();
 
 // Esquema de validación con Zod simplificado
 const schema = z.object({
     id: z.number().optional(),
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-    cost: z.number({
-        required_error: "El costo es requerido",
-        invalid_type_error: "Debe ingresar un número válido"
-    }).min(0, "El costo debe ser mayor o igual a 0"),
+    cost: z.coerce.number().min(0, "El costo debe ser mayor o igual a 0"),
 });
 
 type Schema = z.output<typeof schema>;
+type ProductRow = {
+    id: number;
+    name: string;
+    cost: string;
+    created_at: string | null;
+};
 
 // Estado del modal y formulario
 const isModalOpen = ref(false);
 const isEditMode = ref(false);
 const isDeleteModalOpen = ref(false);
 const isSubmittingForm = ref(false);
-const selectedProduct = ref<Schema | null>(null);
-const productToDelete = ref<Schema | null>(null);
+const selectedProduct = ref<ProductRow | null>(null);
+const productToDelete = ref<ProductRow | null>(null);
 
 // Datos del formulario
 const state = reactive({
@@ -183,7 +197,7 @@ const openCreateModal = () => {
 };
 
 // Función para abrir modal de editar
-const openEditModal = (product: Schema) => {
+const openEditModal = (product: ProductRow) => {
     isEditMode.value = true;
     selectedProduct.value = product;
     Object.assign(state, {
@@ -209,6 +223,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
                 body: productData,
             });
             
+            playSound('success');
             toast.add({
                 title: "Producto actualizado",
                 description: "El producto se actualizó exitosamente",
@@ -220,6 +235,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
                 body: productData,
             });
             
+            playSound('success');
             toast.add({
                 title: "Producto creado",
                 description: "El producto se creó exitosamente",
@@ -242,7 +258,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 };
 
 // Función para abrir modal de confirmación de eliminación
-const openDeleteModal = (product: Schema) => {
+const openDeleteModal = (product: ProductRow) => {
     productToDelete.value = product;
     isDeleteModalOpen.value = true;
 };

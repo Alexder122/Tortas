@@ -6,6 +6,17 @@ defineProps<{
 }>();
 
 const colorMode = useColorMode();
+const router = useRouter();
+const authUser = useCookie<string | null>("auth_user", {
+	sameSite: "lax",
+});
+
+const themePreset = useThemePreset();
+
+function logout() {
+	authUser.value = null;
+	router.push("/login");
+}
 
 const user = ref({
 	name: "Administrador",
@@ -65,11 +76,38 @@ const items = computed<DropdownMenuItem[][]>(() => [
 				},
 			],
 		},
+		{
+			label: "Tema rosa",
+			icon: "i-lucide-palette",
+			children: [
+				{
+					label: "Rosa suave",
+					icon: "i-lucide-flower",
+					type: "checkbox",
+					checked: themePreset.currentPreset.value === "soft",
+					onSelect(e: Event) {
+						e.preventDefault();
+						themePreset.setPreset("soft");
+					},
+				},
+				{
+					label: "Rosa intenso",
+					icon: "i-lucide-heart",
+					type: "checkbox",
+					checked: themePreset.currentPreset.value === "intense",
+					onSelect(e: Event) {
+						e.preventDefault();
+						themePreset.setPreset("intense");
+					},
+				},
+			],
+		},
 	],
 	[
 		{
 			label: "Cerrar sesión",
 			icon: "i-lucide-log-out",
+			onSelect: logout,
 		},
 	],
 ]);
