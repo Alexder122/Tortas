@@ -4,22 +4,11 @@ export default defineNuxtConfig({
 	devtools: { enabled: true },
 	debug: false,
 	ssr: true,
-	modules: ["@nuxt/ui", "@nuxthub/core"],
+	modules: ["@nuxt/ui"],
 	css: ["~/assets/css/main.css"],
 	app: {
 		head: {
 			title: import.meta.env.APP_NAME || "Nuxt App",
-		},
-	},
-	hub: {
-		migrate: false,
-		db: {
-			dialect: "postgresql",
-			driver: "postgres-js",
-			casing: "snake_case",
-			connection: {
-				connectionString: import.meta.env.DATABASE_URL || "",
-			},
 		},
 	},
 	runtimeConfig: {
