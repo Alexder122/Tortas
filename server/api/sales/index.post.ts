@@ -1,4 +1,4 @@
-import { db } from "@nuxthub/db";
+import { db } from "#server/utils/db";
 import { sales, sale_items } from "../../database/schema";
 import { z } from "zod";
 

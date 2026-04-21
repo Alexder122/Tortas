@@ -1,4 +1,4 @@
-import { db } from "@nuxthub/db";
+import { db } from "#server/utils/db";
 import { products } from "../../database/schema";
 import { eq } from "drizzle-orm";
 

@@ -1,4 +1,4 @@
-import { db } from "@nuxthub/db";
+import { db } from "#server/utils/db";
 import { products } from "../../database/schema";
 
 export default eventHandler(async (event) => {

@@ -1,4 +1,4 @@
-import { db } from "@nuxthub/db";
+import { db } from "#server/utils/db";
 import { eq, sql } from "drizzle-orm";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { app_credentials } from "../database/schema";

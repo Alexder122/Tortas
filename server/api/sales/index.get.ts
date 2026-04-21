@@ -1,4 +1,4 @@
-import { db } from "@nuxthub/db";
+import { db } from "#server/utils/db";
 import { sales, sale_items, products } from "../../database/schema";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 
