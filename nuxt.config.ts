@@ -12,6 +12,7 @@ export default defineNuxtConfig({
 		},
 	},
 	hub: {
+		migrate: false,
 		db: {
 			dialect: "postgresql",
 			driver: "postgres-js",
